@@ -10,10 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mysten/sui": "^1.21.2",
-    "@suiet/wallet-kit": "^0.3.4",
+    "@mysten/sui.js": "^0.54.1",
+    "@mysten/wallet-kit": "^0.7.2",
+    "@suiet/wallet-kit": "^0.2.20",
     "atoma-sdk": "^0.1.0",
     "autoprefixer": "^10.4.20",
+    "dotenv": "^16.4.7",
+    "ethos-connect": "^0.0.194",
     "framer-motion": "^12.4.2",
     "lucide-react": "^0.475.0",
     "postcss": "^8.4.49",

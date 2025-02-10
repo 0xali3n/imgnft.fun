@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Brain,
-  Upload,
   Image as ImageIcon,
   Sparkles,
   Wand2,
@@ -11,8 +9,10 @@ import {
   Check,
 } from "lucide-react";
 import { categories } from "../data";
-import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { PLAYVERSE_NFT_CONTRACT } from '../utils/config';
+import { useWallet } from "@suiet/wallet-kit";
 
 const LaunchNFT: React.FC = () => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -24,7 +24,10 @@ const LaunchNFT: React.FC = () => {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [hasGeneratedImage, setHasGeneratedImage] = useState(false);
   const [generationAttemptsLeft, setGenerationAttemptsLeft] = useState(3);
-  const navigate = useNavigate();
+  const wallet = useWallet();
+  const [, setNftObjectId] = useState<string>('');
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -143,6 +146,53 @@ Style requirements:
       console.error("Error generating image:", error);
     } finally {
       setIsGeneratingImage(false);
+    }
+  };
+
+  const handleDeployClick = () => {
+    setShowConfirmationModal(true);
+  };
+
+  const confirmDeployNFTCollection = async () => {
+    setShowConfirmationModal(false);
+    if (!wallet?.account?.address || !name || !description || !previewImage) return;
+    
+    setIsDeploying(true);
+    try {
+      const transactionBlock = new TransactionBlock();
+      transactionBlock.moveCall({
+        target: `${PLAYVERSE_NFT_CONTRACT}::nft::mint_to_sender`,
+        arguments: [
+          transactionBlock.pure(name),
+          transactionBlock.pure(description),
+          transactionBlock.pure(previewImage),
+          transactionBlock.pure(0) // You can add price logic if needed
+        ]
+      });
+
+      const response = await wallet.signAndExecuteTransactionBlock({
+        transactionBlock,
+        options: {
+          showObjectChanges: true,
+        }
+      });
+
+      console.log("Transaction Response:", response); // Log the transaction response
+
+      if (response?.objectChanges) {
+        const createdObject = response.objectChanges.find(
+          (e) => e.type === "created"
+        );
+        if (createdObject && "objectId" in createdObject) {
+          setNftObjectId(createdObject.objectId);
+          // You can add success notification here
+        }
+      }
+    } catch (error) {
+      console.error("Error deploying NFT:", error);
+      // You can add error notification here
+    } finally {
+      setIsDeploying(false);
     }
   };
 
@@ -370,7 +420,11 @@ Style requirements:
               transition={{ delay: 0.8 }}
             >
               <div className="flex flex-col items-center">
-                <button className="group px-8 sm:px-12 py-3 sm:py-4 bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 bg-size-200 text-white rounded-xl hover:bg-pos-100 transition-all duration-500 flex items-center gap-3 text-base sm:text-lg font-semibold shadow-lg shadow-violet-200/50 hover:shadow-xl hover:shadow-violet-300 hover:scale-105">
+                <button 
+                  onClick={handleDeployClick}
+                  disabled={!wallet?.account?.address || !name || !description || !previewImage || isDeploying}
+                  className="group px-8 sm:px-12 py-3 sm:py-4 bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 bg-size-200 text-white rounded-xl hover:bg-pos-100 transition-all duration-500 flex items-center gap-3 text-base sm:text-lg font-semibold shadow-lg shadow-violet-200/50 hover:shadow-xl hover:shadow-violet-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <Rocket className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
                   Deploy NFT Collection
                 </button>
@@ -382,6 +436,37 @@ Style requirements:
           </div>
         </motion.div>
       </div>
+
+      {/* Confirmation Modal */}
+      <AnimatePresence>
+        {showConfirmationModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <div className="bg-white rounded-lg p-6 shadow-lg">
+              <h2 className="text-lg font-semibold mb-4">Confirm Deployment</h2>
+              <p className="mb-6">Are you sure you want to deploy this NFT collection?</p>
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={() => setShowConfirmationModal(false)}
+                  className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeployNFTCollection}
+                  className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
