@@ -13,6 +13,7 @@
     "@mysten/sui.js": "^0.54.1",
     "@mysten/wallet-kit": "^0.7.2",
     "@suiet/wallet-kit": "^0.2.20",
+    "@supabase/supabase-js": "^2.48.1",
     "atoma-sdk": "^0.1.0",
     "autoprefixer": "^10.4.20",
     "dotenv": "^16.4.7",
@@ -25,6 +26,7 @@
     "react-icons": "^5.4.0",
     "react-particles": "^2.12.2",
     "react-router-dom": "^7.1.5",
+    "react-toastify": "^11.0.3",
     "tailwindcss": "^3.4.17"
   },
   "devDependencies": {

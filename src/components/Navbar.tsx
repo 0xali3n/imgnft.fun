@@ -8,10 +8,10 @@ const Navbar: React.FC = () => {
 
   return (
     <nav className="bg-white/70 backdrop-blur-lg border-b border-slate-100 sticky top-0 z-50">
-      <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
+      <div className="container mx-auto px-4 sm:px-6 py-3">
         <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2 sm:space-x-3">
-            <div className="flex items-center text-xl sm:text-2xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl p-1.5 sm:p-2 hover:scale-105 transition-transform cursor-pointer">
+          <Link to="/" className="flex items-center space-x-2.5">
+            <div className="flex items-center text-2xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl p-2 hover:scale-105 transition-transform cursor-pointer">
               <Brain className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
@@ -23,15 +23,17 @@ const Navbar: React.FC = () => {
               </span>
             </div>
           </Link>
-          <div className="flex items-center gap-2 sm:gap-4">
+          
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
             <button
               onClick={() => navigate("/launch")}
-              className="px-3 sm:px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl hover:opacity-90 transition-all hover:scale-105 font-medium shadow-lg shadow-violet-200/50 text-sm sm:text-base"
+              className="w-full sm:w-auto px-2.5 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl hover:opacity-90 transition-all hover:scale-105 font-medium shadow-lg shadow-violet-200/50 text-xs sm:text-sm whitespace-nowrap"
             >
               Launch NFT
             </button>
-            <div className="scale-75 sm:scale-90">
-              <ConnectButton />
+            <ConnectButton/>
+            <div className="text-xs px-3 py-1 bg-amber-100 text-amber-700 rounded-full font-medium">
+              Testnet
             </div>
           </div>
         </div>

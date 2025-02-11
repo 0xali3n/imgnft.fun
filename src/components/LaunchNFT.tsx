@@ -13,6 +13,10 @@ import Navbar from "./Navbar";
 import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { PLAYVERSE_NFT_CONTRACT } from '../utils/config';
 import { useWallet } from "@suiet/wallet-kit";
+import { supabase } from '../utils/supabaseClient';
+
+// Add your ImgBB API key here
+const IMGBB_API_KEY = import.meta.env.VITE_IMGBB_API_KEY || 'your-imgbb-api-key';
 
 const LaunchNFT: React.FC = () => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -28,15 +32,29 @@ const LaunchNFT: React.FC = () => {
   const [, setNftObjectId] = useState<string>('');
   const [isDeploying, setIsDeploying] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [showListModal, setShowListModal] = useState(false);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          setPreviewImage(data.data.url);
+        } else {
+          console.error("Error uploading image to ImgBB:", data.error);
+        }
+      } catch (error) {
+        console.error("Error uploading image:", error);
+      }
     }
   };
 
@@ -166,26 +184,40 @@ Style requirements:
           transactionBlock.pure(name),
           transactionBlock.pure(description),
           transactionBlock.pure(previewImage),
-          transactionBlock.pure(0) // You can add price logic if needed
+          transactionBlock.pure(0)
         ]
       });
 
       const response = await wallet.signAndExecuteTransactionBlock({
         transactionBlock,
         options: {
+          showEffects: true,
           showObjectChanges: true,
         }
       });
 
-      console.log("Transaction Response:", response); // Log the transaction response
+      console.log("Transaction Response:", response);
 
-      if (response?.objectChanges) {
-        const createdObject = response.objectChanges.find(
-          (e) => e.type === "created"
-        );
-        if (createdObject && "objectId" in createdObject) {
-          setNftObjectId(createdObject.objectId);
-          // You can add success notification here
+      if (response?.digest) {
+        // Store transaction digest instead of object ID
+        setNftObjectId(response.digest);
+
+        // Add NFT details to Supabase with transaction hash
+        const { error } = await supabase.from('nfts').insert({
+          name,
+          description,
+          image_url: previewImage,
+          category: selectedCategory,
+          wallet_address: wallet.account.address,
+          transaction_hash: response.digest
+        });
+
+        if (error) {
+          console.error("Error storing NFT details:", error);
+          // You can add error notification here
+        } else {
+          // Show modal to list NFT
+          setShowListModal(true);
         }
       }
     } catch (error) {
@@ -193,6 +225,25 @@ Style requirements:
       // You can add error notification here
     } finally {
       setIsDeploying(false);
+    }
+  };
+
+  const handleListNFT = async () => {
+    // Store NFT details in the listed_nfts table
+    const { error } = await supabase.from('listed_nfts').insert({
+      name,
+      description,
+      image_url: previewImage,
+      category: selectedCategory,
+      wallet_address: wallet?.account?.address || ''
+    });
+
+    if (error) {
+      console.error("Error listing NFT:", error);
+      // You can add error notification here
+    } else {
+      alert("NFT listed successfully!");
+      setShowListModal(false);
     }
   };
 
@@ -461,6 +512,37 @@ Style requirements:
                   className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition"
                 >
                   Confirm
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Listing Modal */}
+      <AnimatePresence>
+        {showListModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <div className="bg-white rounded-lg p-6 shadow-lg">
+              <h2 className="text-lg font-semibold mb-4">List NFT</h2>
+              <p className="mb-6">Do you want to list this NFT on our marketplace?</p>
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={() => setShowListModal(false)}
+                  className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+                >
+                  No
+                </button>
+                <button
+                  onClick={handleListNFT}
+                  className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition"
+                >
+                  Yes
                 </button>
               </div>
             </div>

@@ -4,6 +4,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Particles from "react-particles";
 import LandingPage from "./components/LandingPage";
 import LaunchNFT from "./components/LaunchNFT";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const App: React.FC = () => {
   return (
@@ -28,6 +30,7 @@ const App: React.FC = () => {
           <Route path="/launch" element={<LaunchNFT />} />
         </Routes>
       </div>
+      <ToastContainer />
     </Router>
   );
 };
